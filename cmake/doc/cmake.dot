@@ -1,0 +1,63 @@
+@startdot
+digraph Make {
+	rankdir=BT;
+	subgraph clusterPrerequisite {
+		node [shape=box, style=rounded];
+		CM [label="CMake", color=royalblue];
+		SWIG [label="Swig\n(Unix)", color=chocolate];
+		PY [label="Python\n(2.7,3.5,3.6)", color=gold];
+		CM -> SWIG [arrowhead=none, style=invisible];
+		SWIG -> PY [arrowhead=none, style=invisible];
+		label = "Prerequisite";
+	}
+	subgraph clusterOR {
+		node [shape=box,style=rounded];
+		OR [label="C++", shape=component, style="rounded,filled,bold", color=royalblue, fillcolor=royalblue];
+		OR_WPY [label="Python wrap", color=gold];
+		OR_PY [label="Python\n(-DENABLE_PYTHON=ON)", style="rounded,filled,bold", color=gold, fillcolor=gold];
+		OR -> OR_WPY [label="swig", color=chocolate];
+		OR_WPY -> OR_PY [label="python", color=gold];
+		OR -> OR_PY [label="python", color=gold];
+		subgraph clusterDeps {
+			node [shape=box,style=rounded];
+			Z [label="Zlib\n(CMake)", color=royalblue];
+			GF [label="GFlags\n(CMake)", color=royalblue];
+			GL [label="GLog\n(CMake)", color=royalblue];
+			PB [label="Protobuf\n(CMake)", color=royalblue];
+			CBC [label="Cbc\n(CMake)", color=royalblue];
+			SWIG_WIN [label="Swig\n(Windows)", color=chocolate];
+			color=royalblue;
+			label = "Dependencies\n(CMake subproject)";
+		}
+		Z -> OR [label="ExternalProject"];
+		Z -> PB;
+		PB -> OR [label="ExternalProject"];
+		GF -> OR [label="ExternalProject"];
+		GF -> GL;
+		GL -> OR [label="ExternalProject"];
+		Z -> CBC;
+		CBC -> OR [label="ExternalProject"];
+		subgraph clusterPackage {
+			node [shape=component];
+			PKG_CC [label=".deb Package", style="filled",	color=royalblue];
+			PKG_PY [label="Pypi Package", style="filled",	color=gold];
+			color=royalblue;
+			label = "Package";
+		}
+		OR -> PKG_CC [label="WIP", style="dotted", color=dimgrey];
+		OR_PY -> PKG_PY [color=gold];
+		subgraph clusterEX {
+			node [shape=box,style="rounded,dashed"];
+			EX_CC [label="C++", color=royalblue];
+			EX_PY [label="Python", color=gold];
+			color=royalblue;
+			label = "Examples";
+		}
+		OR -> EX_CC;
+		OR_PY -> EX_PY [color=gold];
+		color=royalblue;
+		label = "OR-Tools (CMake)";
+	}
+}
+@enddot
+# vim tw:0
