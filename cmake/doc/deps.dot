@@ -1,0 +1,66 @@
+@startdot
+digraph Make {
+	rankdir=BT;
+	subgraph clusterCoinUtils {
+		node [shape=box, style=rounded];
+		CoinUtils [label="Coin::CoinUtils", color=royalblue];
+		color=royalblue;
+		label = "CoinUtils.git";
+	}
+	subgraph clusterOsi {
+		node [shape=box, style=rounded];
+		Osi [label="Coin::Osi", color=royalblue];
+		color=royalblue;
+		label = "Osi.git";
+	}
+	subgraph clusterClp {
+		node [shape=box, style=rounded];
+		Clp [label="Coin::Clp", color=royalblue];
+		OsiClp [label="Coin::OsiClp", color=royalblue];
+		ClpSolver [label="Coin::ClpSolver", color=royalblue];
+		color=royalblue;
+		label = "Clp.git";
+	}
+	subgraph clusterCgl {
+		node [shape=box, style=rounded];
+		Cgl [label="Coin::Cgl", color=royalblue];
+		color=royalblue;
+		label = "Cgl.git";
+	}
+	subgraph clusterCbc {
+		node [shape=box, style=rounded];
+		Cbc [label="Coin::Cbc", color=royalblue];
+		OsiCbc [label="Coin::OsiCbc", color=royalblue];
+		CbcSolver [label="Coin::CbcSolver", color=royalblue];
+		color=royalblue;
+		label = "Cbc.git";
+	}
+
+  CoinUtils -> Osi [label=""];
+
+  CoinUtils -> Clp [label=""];
+  Osi -> Clp [label=""];
+
+  CoinUtils -> OsiClp [label=""];
+  Osi -> OsiClp [label=""];
+  Clp -> OsiClp [label=""];
+
+  Clp -> ClpSolver [label=""];
+
+  CoinUtils -> Cgl [label=""];
+  Osi -> Cgl [label=""];
+  OsiClp -> Cgl [label=""];
+
+  CoinUtils -> Cbc [label=""];
+  Osi -> Cbc [label=""];
+  Clp -> Cbc [label=""];
+  Cgl -> Cbc [label=""];
+
+  CoinUtils -> OsiCbc [label=""];
+  Osi -> OsiCbc [label=""];
+  Cbc -> OsiCbc [label=""];
+
+  Cbc -> CbcSolver [label=""];
+}
+@enddot
+# vim tw:0
