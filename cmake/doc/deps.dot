@@ -1,5 +1,5 @@
 @startdot
-digraph Make {
+digraph CMake {
 	rankdir=BT;
 	subgraph clusterCoinUtils {
 		node [shape=box, style=rounded];
