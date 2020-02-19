@@ -9,6 +9,14 @@ endif()
 find_package(SWIG)
 include(UseSWIG)
 
+if(${SWIG_VERSION} VERSION_GREATER 3)
+	list(APPEND CMAKE_SWIG_FLAGS "-doxygen")
+endif()
+
+if(UNIX AND NOT APPLE)
+	list(APPEND CMAKE_SWIG_FLAGS "-DSWIGWORDSIZE64")
+endif()
+
 # Generate Protobuf .Net sources
 set(PROTO_DOTNETS)
 file(GLOB_RECURSE proto_dotnet_files RELATIVE ${PROJECT_SOURCE_DIR}
