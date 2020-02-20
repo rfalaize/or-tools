@@ -64,10 +64,15 @@ foreach(SUBPROJECT constraint_solver linear_solver sat graph algorithms data)
   #add_subdirectory(ortools/${SUBPROJECT}/java)
 endforeach()
 
+file(GENERATE
+  OUTPUT pom.xml
+  INPUT ortools/java/pom.xml.in)
+
+
 # Main Target
 add_custom_target(java_package ALL
   DEPENDS pom.xml
-  COMMAND ${CMAKE_COMMAND} -E remove_directory dist
+  COMMAND ${CMAKE_COMMAND} -E remove_directory com
   COMMAND ${Java_JAVAC_EXECUTABLE} pom.xml
   )
 
