@@ -55,8 +55,8 @@ set(Python_ADDITIONAL_VERSIONS "${PYTHON_VERSION_STRING}")
 enable_language(CXX)
 find_package(PythonLibs REQUIRED)
 
-if(${PYTHON_VERSION_STRING} VERSION_GREATER 3)
-  set(CMAKE_SWIG_FLAGS "-py3;-DPY3")
+if(${PYTHON_VERSION_STRING} VERSION_GREATER_EQUAL 3)
+  list(APPEND CMAKE_SWIG_FLAGS "-py3;-DPY3")
 endif()
 
 # CMake will remove all '-D' prefix (i.e. -DUSE_FOO become USE_FOO)
