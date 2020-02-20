@@ -64,6 +64,10 @@ foreach(SUBPROJECT constraint_solver linear_solver sat graph algorithms data)
   #add_subdirectory(ortools/${SUBPROJECT}/csharp)
 endforeach()
 
+file(GENERATE
+  OUTPUT ${PROJECT_NAME}.csproj
+  INPUT ortools/dotnet/Google.OrTools/Google.OrTools.csproj.in)
+
 # Main Target
 add_custom_target(dotnet_package ALL
   DEPENDS ${PROJECT_NAME}.csproj
