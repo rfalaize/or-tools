@@ -73,5 +73,5 @@ add_custom_target(dotnet_package ALL
 
 # Test
 if(BUILD_TESTING)
-  add_subdirectory(examples/dotnet)
+  #add_subdirectory(examples/dotnet)
 endif()
