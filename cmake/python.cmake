@@ -2,6 +2,9 @@ if(NOT BUILD_PYTHON)
   return()
 endif()
 
+# Use latest UseSWIG module
+cmake_minimum_required(VERSION 3.14)
+
 if(NOT TARGET ortools::ortools)
   message(FATAL_ERROR "Python: missing ortools TARGET")
 endif()
@@ -17,6 +20,24 @@ endif()
 if(UNIX AND NOT APPLE)
 	list(APPEND CMAKE_SWIG_FLAGS "-DSWIGWORDSIZE64")
 endif()
+
+# Setup Python
+# prefer Python 3.8 over 3.7 over ...
+# user can overwrite it e.g.:
+# cmake -S. -Bbuild -DBUILD_PYTHON=ON -DPython_ADDITIONAL_VERSIONS="3.9"
+set(Python_ADDITIONAL_VERSIONS "3.8;3.7;3.6;3.5" CACHE STRING "Python to use for binding")
+find_package(PythonInterp REQUIRED)
+message(STATUS "Found Python: ${PYTHON_EXECUTABLE} (found version \"${PYTHON_VERSION_STRING}\")")
+
+if(${PYTHON_VERSION_STRING} VERSION_GREATER_EQUAL 3)
+  list(APPEND CMAKE_SWIG_FLAGS "-py3;-DPY3")
+endif()
+
+# Find Python Library
+# Force PythonLibs to find the same version than the python interpreter.
+set(Python_ADDITIONAL_VERSIONS "${PYTHON_VERSION_STRING}")
+find_package(PythonLibs REQUIRED)
+message(STATUS "Found Python Include: ${PYTHON_INCLUDE_DIRS} (found version \"${PYTHONLIBS_VERSION_STRING}\")")
 
 # Generate Protobuf py sources
 set(PROTO_PYS)
@@ -46,19 +67,6 @@ foreach(PROTO_FILE ${proto_py_files})
 endforeach()
 add_custom_target(Py${PROJECT_NAME}_proto DEPENDS ${PROTO_PYS} ortools::ortools)
 
-# Setup Python
-set(Python_ADDITIONAL_VERSIONS "3.8;3.7;3.6;3.5;2.7" CACHE STRING "Python to use for binding")
-find_package(PythonInterp REQUIRED)
-# Force PythonLibs to find the same version than the python interpreter.
-set(Python_ADDITIONAL_VERSIONS "${PYTHON_VERSION_STRING}")
-# PythonLibs require enable_language(CXX)
-enable_language(CXX)
-find_package(PythonLibs REQUIRED)
-
-if(${PYTHON_VERSION_STRING} VERSION_GREATER_EQUAL 3)
-  list(APPEND CMAKE_SWIG_FLAGS "-py3;-DPY3")
-endif()
-
 # CMake will remove all '-D' prefix (i.e. -DUSE_FOO become USE_FOO)
 #get_target_property(FLAGS ortools::ortools COMPILE_DEFINITIONS)
 set(FLAGS -DUSE_BOP -DUSE_GLOP -DABSL_MUST_USE_RESULT)
@@ -74,22 +82,25 @@ foreach(SUBPROJECT constraint_solver linear_solver sat graph algorithms data)
   add_subdirectory(ortools/${SUBPROJECT}/python)
 endforeach()
 
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/util COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/constraint_solver/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/linear_solver/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/sat/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/sat/python COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/graph/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/algorithms/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/ortools/data/ COPYONLY)
+#######################
+## Python Packaging  ##
+#######################
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/util COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/constraint_solver/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/linear_solver/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/sat/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/graph/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/algorithms/ COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/data/ COPYONLY)
 
 configure_file(${PROJECT_SOURCE_DIR}/ortools/linear_solver/linear_solver_natural_api.py
-  ${PROJECT_BINARY_DIR}/ortools/linear_solver/ COPYONLY)
+  ${PROJECT_BINARY_DIR}/python/ortools/linear_solver/ COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/ortools/sat/python/cp_model.py
-  ${PROJECT_BINARY_DIR}/ortools/sat/python COPYONLY)
+  ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/ortools/sat/python/visualization.py
-  ${PROJECT_BINARY_DIR}/ortools/sat/python COPYONLY)
+  ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
 
 # To use a cmake generator expression (aka $<>), it must be processed at build time
 # i.e. inside a add_custom_command()
@@ -129,12 +140,12 @@ add_custom_command(OUTPUT setup.py dist ${PROJECT_NAME}.egg-info
   COMMAND ${CMAKE_COMMAND} -E echo "  packages=find_packages()," >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  package_data={" >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  'ortools':[$<$<NOT:$<PLATFORM_ID:Windows>>:'.libs/*', '../$<TARGET_SONAME_FILE_NAME:ortools>'>]," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.constraint_solver':['$<TARGET_FILE_NAME:_pywrapcp>', '*.pyi']," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.linear_solver':['$<TARGET_FILE_NAME:_pywraplp>', '*.pyi']," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.sat':['$<TARGET_FILE_NAME:_pywrapsat>', '*.pyi']," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.graph':['$<TARGET_FILE_NAME:_pywrapgraph>']," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.algorithms':['$<TARGET_FILE_NAME:_pywrapknapsack_solver>']," >> setup.py
-  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.data':['$<TARGET_FILE_NAME:_pywraprcpsp>', '*.pyi']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.constraint_solver':['$<TARGET_FILE_NAME:pywrapcp>', '*.pyi']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.linear_solver':['$<TARGET_FILE_NAME:pywraplp>', '*.pyi']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.sat':['$<TARGET_FILE_NAME:pywrapsat>', '*.pyi']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.graph':['$<TARGET_FILE_NAME:pywrapgraph>']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.algorithms':['$<TARGET_FILE_NAME:pywrapknapsack_solver>']," >> setup.py
+  COMMAND ${CMAKE_COMMAND} -E echo "  'ortools.data':['$<TARGET_FILE_NAME:pywraprcpsp>', '*.pyi']," >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  }," >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  include_package_data=True," >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  install_requires=[" >> setup.py
@@ -159,8 +170,12 @@ add_custom_command(OUTPUT setup.py dist ${PROJECT_NAME}.egg-info
   COMMAND ${CMAKE_COMMAND} -E echo "  'Topic :: Software Development :: Libraries :: Python Modules'" >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo "  ]," >> setup.py
   COMMAND ${CMAKE_COMMAND} -E echo ")" >> setup.py
+	COMMENT "Generate setup.py at build time (to use generator expression)"
+	WORKING_DIRECTORY python
   VERBATIM)
 
+# Find if python module MODULE_NAME is available,
+# if not install it to the Python user install directory.
 function(search_python_module MODULE_NAME)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import ${MODULE_NAME}; print(${MODULE_NAME}.__version__)"
@@ -188,7 +203,17 @@ search_python_module(wheel)
 add_custom_target(python_package ALL
   DEPENDS setup.py Py${PROJECT_NAME}_proto
   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
-  COMMAND ${PYTHON_EXECUTABLE} setup.py bdist bdist_wheel
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_NAME}/.libs
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapknapsack_solver> ${PROJECT_NAME}/algorithms
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapgraph> ${PROJECT_NAME}/graph
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapcp> ${PROJECT_NAME}/constraint_solver
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywraplp> ${PROJECT_NAME}/linear_solver
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapsat> ${PROJECT_NAME}/sat
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywraprcpsp> ${PROJECT_NAME}/data
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ortools> ${PROJECT_NAME}/.libs
+  #COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_egg bdist_wheel
+	COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
+	WORKING_DIRECTORY python
   )
 
 # Test
