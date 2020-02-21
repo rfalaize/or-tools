@@ -3,7 +3,7 @@ if(NOT BUILD_DOTNET)
 endif()
 
 if(NOT TARGET ortools::ortools)
-  message(FATAL_ERROR "Java: missing ortools TARGET")
+  message(FATAL_ERROR ".Net: missing ortools TARGET")
 endif()
 
 find_package(SWIG)
