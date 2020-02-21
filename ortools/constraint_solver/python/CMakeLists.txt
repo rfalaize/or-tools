@@ -5,7 +5,7 @@ set_property(SOURCE routing.i PROPERTY SWIG_MODULE_NAME pywrapcp)
 swig_add_library(pywrapcp
   TYPE SHARED
   LANGUAGE python
-  OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/..
+  OUTPUT_DIR ${PROJECT_BINARY_DIR}/python/${PROJECT_NAME}/constraint_solver
   SOURCES routing.i)
 
 target_include_directories(pywrapcp PRIVATE ${PYTHON_INCLUDE_DIRS})
