@@ -1,3 +1,5 @@
+list(APPEND CMAKE_SWIG_FLAGS "-nofastunpack")
+
 set_property(SOURCE routing.i PROPERTY CPLUSPLUS ON)
 set_property(SOURCE routing.i PROPERTY SWIG_MODULE_NAME pywrapcp)
 swig_add_library(pywrapcp
@@ -8,6 +10,9 @@ swig_add_library(pywrapcp
 
 target_include_directories(pywrapcp PRIVATE ${PYTHON_INCLUDE_DIRS})
 set_property(TARGET pywrapcp PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON)
+if(${PYTHON_VERSION_STRING} VERSION_GREATER_EQUAL 3)
+  target_compile_definitions(pywrapcp PUBLIC "PY3")
+endif()
 
 # note: macOS is APPLE and also UNIX !
 if(APPLE)

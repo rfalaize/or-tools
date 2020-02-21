@@ -85,22 +85,23 @@ endforeach()
 #######################
 ## Python Packaging  ##
 #######################
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/util COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/constraint_solver/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/linear_solver/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/sat/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/graph/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/algorithms/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/__init__.py ${PROJECT_BINARY_DIR}/python/ortools/data/ COPYONLY)
+#file(MAKE_DIRECTORY python/${PROJECT_NAME})
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME})
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/util)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/constraint_solver)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/linear_solver)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/sat)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/sat/python)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/graph)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/algorithms)
+file(COPY ortools/__init__.py DESTINATION python/${PROJECT_NAME}/data)
 
-configure_file(${PROJECT_SOURCE_DIR}/ortools/linear_solver/linear_solver_natural_api.py
-  ${PROJECT_BINARY_DIR}/python/ortools/linear_solver/ COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/sat/python/cp_model.py
-  ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/ortools/sat/python/visualization.py
-  ${PROJECT_BINARY_DIR}/python/ortools/sat/python COPYONLY)
+file(COPY ortools/linear_solver/linear_solver_natural_api.py
+  DESTINATION python/ortools/linear_solver)
+file(COPY ortools/sat/python/cp_model.py
+  DESTINATION python/ortools/sat/python)
+file(COPY ortools/sat/python/visualization.py
+  DESTINATION python/ortools/sat/python)
 
 # To use a cmake generator expression (aka $<>), it must be processed at build time
 # i.e. inside a add_custom_command()
@@ -231,11 +232,11 @@ if(BUILD_TESTING)
   # make a virtualenv to install our python package in it
   add_custom_command(TARGET python_package POST_BUILD
     COMMAND ${VENV_EXECUTABLE} -p ${PYTHON_EXECUTABLE} ${VENV_DIR}
-    COMMAND ${VENV_BIN_DIR}/python setup.py install
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/test.py.in
-    ${VENV_DIR}/test.py
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    # Must not call it in a folder containing the setup.py otherwise pip call it
+    # (i.e. "python setup.py bdist") while we want to consume the wheel package
+		COMMAND ${VENV_BIN} -m pip install --find-links=${CMAKE_CURRENT_BINARY_DIR}/python/dist ${PROJECT_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/test.py.in ${VENV_DIR}/test.py
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   # run the tests within the virtualenv
   add_test(pytest_venv ${VENV_BIN_DIR}/python ${VENV_DIR}/test.py)
 
